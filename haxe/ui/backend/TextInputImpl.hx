@@ -1,9 +1,6 @@
 package haxe.ui.backend;
 
-import haxe.ui.core.TextInput.TextInputData;
+import haxe.ui.backend.flixel.textinputs.OpenFLTextInput;
 
-class TextInputImpl extends TextDisplayImpl {
-	public function new() {
-		super();
-	}
+class TextInputImpl extends OpenFLTextInput {
 }

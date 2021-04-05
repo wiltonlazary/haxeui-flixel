@@ -4,9 +4,9 @@
         "MSGhero",
         "ianharrigan"
     ],
-    "version": "1.0.0",
+    "version": "1.2.3",
     "description": "The Flixel backend of the HaxeUI framework",
-    "releasenote": "Official release",
+    "releasenote": "Tweaks and fixes",
     "tags": [
         "ui",
         "gui",

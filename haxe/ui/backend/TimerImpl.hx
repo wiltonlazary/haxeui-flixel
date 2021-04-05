@@ -7,11 +7,15 @@ class TimerImpl {
 	private var _timer:FlxTimer;
 
 	public function new(delay:Int, callback:Void->Void) {
-		
 		_timer = new FlxTimer();
-		_timer.start(delay / 1000, function(_) {
+        var d = delay / 1000;
+        var loops = 1;
+        if (d > 0) {
+            loops = 0;
+        }
+		_timer.start(d, function(_) {
 			callback();
-		});
+		}, loops);
 	}
 
 	public function stop() {

@@ -1,33 +1,24 @@
 package haxe.ui.backend.flixel;
 
-import flash.geom.Matrix;
-import flash.geom.Point;
-import flash.geom.Rectangle;
 import flixel.FlxSprite;
 import flixel.graphics.frames.FlxFrame.FlxFrameAngle;
 import flixel.util.FlxColor;
-import flixel.util.FlxSpriteUtil;
-import flixel.util.FlxSpriteUtil.LineStyle;
 import haxe.ui.assets.ImageInfo;
-import haxe.ui.backend.ImageData;
-import haxe.ui.styles.Style;
 import haxe.ui.geom.Slice9;
+import haxe.ui.styles.Style;
+import haxe.ui.util.ColorUtil;
+import openfl.display.BitmapData;
+import openfl.geom.Matrix;
+import openfl.geom.Point;
+import openfl.geom.Rectangle;
 
-/**
- * ...
- * @author MSGhero
- */
 class FlxStyleHelper {
-	
-	public static function applyStyle(sprite:FlxSprite, style:Style):Void {
-		
-		if (sprite.pixels == null) return;
-		
-		var pixels = sprite.pixels;
-		
-        
-        
-        
+    public static function applyStyle(sprite:FlxSprite, style:Style) {
+		if (sprite == null || sprite.pixels == null) {
+            return;
+        }
+
+		var pixels:BitmapData = sprite.pixels;
         
         var left:Float = 0;
         var top:Float = 0;
@@ -39,13 +30,9 @@ class FlxStyleHelper {
         }
         
         var rc:Rectangle = new Rectangle(top, left, width, height);
-        var borderRadius:Float = 0;
-        if (style.borderRadius != null) {
-            borderRadius = style.borderRadius;
-        }
-
-        var lineStyle:LineStyle = FlxSpriteUtil.getDefaultLineStyle();
-        lineStyle.thickness = 0;
+        
+        pixels.fillRect(rc, 0x0);
+        
         if (style.borderLeftSize != null && style.borderLeftSize != 0
             && style.borderLeftSize == style.borderRightSize
             && style.borderLeftSize == style.borderBottomSize
@@ -54,58 +41,95 @@ class FlxStyleHelper {
             && style.borderLeftColor != null
             && style.borderLeftColor == style.borderRightColor
             && style.borderLeftColor == style.borderBottomColor
-            && style.borderLeftColor == style.borderTopColor) { // TODO: kinda ugly border issue with pixel anti-aliasing (it seems) - only seems to be html5?
-            lineStyle.thickness = style.borderLeftSize;
-            lineStyle.color = style.borderLeftColor | 0xFF000000;
-            rc.left += style.borderLeftSize / 2;
-            rc.top += style.borderLeftSize / 2;
-            rc.bottom -= style.borderLeftSize / 2;
-            rc.right -= style.borderLeftSize / 2;
-            //rc.inflate( -(style.borderLeftSize / 2), -(style.borderLeftSize / 2));
-        }        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-		if (style.backgroundColor != null) {
-			
-			var opacity = style.backgroundOpacity == null ? 1 : style.backgroundOpacity;
-			var color:FlxColor = Std.int(opacity * 0xFF) << 24 | style.backgroundColor;
-			var radius:Float = style.borderRadius == null ? 0 : style.borderRadius + 2;
-			
-			// gradient
-			
-			if (radius == 0) {
-                pixels.fillRect(rc, color);
-            } else {
-                //var drawStyle:DrawStyle = { smoothing: false };
-                if (lineStyle.thickness > 0) {
-                    FlxSpriteUtil.drawRoundRect(sprite, rc.left, rc.top, rc.width, rc.height, radius, radius, color, lineStyle);
-                } else {
-                    FlxSpriteUtil.drawRoundRect(sprite, rc.left, rc.top, rc.width, rc.height, radius, radius, color);
-                }
+            && style.borderLeftColor == style.borderTopColor) {
+                var borderSize = style.borderLeftSize;
+                var opacity = style.borderOpacity == null ? 1 : style.borderOpacity;
+                var color:FlxColor = Std.int(opacity * 0xFF) << 24 | style.borderLeftColor;
+                
+                pixels.fillRect(new Rectangle(rc.left, rc.top, rc.width, borderSize), color); // top
+                pixels.fillRect(new Rectangle(rc.right - borderSize, rc.top + borderSize, borderSize, rc.height - (borderSize * 2)), color); // right
+                pixels.fillRect(new Rectangle(rc.left, rc.height - borderSize, rc.width, borderSize), color); // bottom
+                pixels.fillRect(new Rectangle(rc.left, rc.top + borderSize, borderSize, rc.height - (borderSize * 2)), color); // left 
+                rc.inflate(-borderSize, -borderSize);
+        } else { // compound border
+            var org = rc.clone();
+            
+            if (style.borderTopSize != null && style.borderTopSize > 0) {
+                var borderSize = style.borderTopSize;
+                var opacity = style.borderOpacity == null ? 1 : style.borderOpacity;
+                var color:FlxColor = Std.int(opacity * 0xFF) << 24 | style.borderTopColor;
+                pixels.fillRect(new Rectangle(rc.left, rc.top, org.width, borderSize), color); // top
+                rc.top += borderSize;
             }
-		}
-		
-		if (style.backgroundImage != null) {
-			Toolkit.assets.getImage(style.backgroundImage, function(ii:ImageInfo) {
-				if (ii != null && ii.data != null) drawBG(sprite, ii.data, style);
-			});
-		}
-		
-		// border
-	}
-	
-	static function drawBG(sprite:FlxSprite, data:ImageData, style:Style):Void {
-		
+            
+            if (style.borderBottomSize != null && style.borderBottomSize > 0) {
+                var borderSize = style.borderBottomSize;
+                var opacity = style.borderOpacity == null ? 1 : style.borderOpacity;
+                var color:FlxColor = Std.int(opacity * 0xFF) << 24 | style.borderBottomColor;
+                pixels.fillRect(new Rectangle(rc.left, org.height - borderSize, rc.width, borderSize), color); // bottom
+                rc.bottom -= borderSize;
+            }
+            
+            if (style.borderLeftSize != null && style.borderLeftSize > 0) {
+                var borderSize = style.borderLeftSize;
+                var opacity = style.borderOpacity == null ? 1 : style.borderOpacity;
+                var color:FlxColor = Std.int(opacity * 0xFF) << 24 | style.borderLeftColor;
+                pixels.fillRect(new Rectangle(rc.left, rc.top, borderSize, org.height - rc.top), color); // left 
+                rc.left += borderSize;
+            }
+            
+            if (style.borderRightSize != null && style.borderRightSize > 0) {
+                var borderSize = style.borderRightSize;
+                var opacity = style.borderOpacity == null ? 1 : style.borderOpacity;
+                var color:FlxColor = Std.int(opacity * 0xFF) << 24 | style.borderRightColor;
+                pixels.fillRect(new Rectangle(org.width - borderSize, rc.top, borderSize, org.height), color); // right 
+                rc.right -= borderSize;
+            }
+        }
+        
+        
+        if (style.backgroundColor != null) {
+			var opacity = style.backgroundOpacity == null ? 1 : style.backgroundOpacity;
+            if (style.backgroundColorEnd != null && style.backgroundColor != style.backgroundColorEnd) {
+                var gradientType:String = "vertical";
+                if (style.backgroundGradientStyle != null) {
+                    gradientType = style.backgroundGradientStyle;
+                }
+
+                var arr:Array<Int> = null;
+                var n:Int = 0;
+                var rcLine:Rectangle = new Rectangle();
+                if (gradientType == "vertical") {
+                    arr = ColorUtil.buildColorArray(style.backgroundColor, style.backgroundColorEnd, Std.int(rc.height));
+                    for (c in arr) {
+                        rcLine.setTo(rc.left, rc.top + n, rc.width, 1);
+                        pixels.fillRect(rcLine, Std.int(opacity * 0xFF) << 24 | c);
+                        n++;
+                    }
+                } else if (gradientType == "horizontal") {
+                    arr = ColorUtil.buildColorArray(style.backgroundColor, style.backgroundColorEnd, Std.int(rc.width));
+                    for (c in arr) {
+                        rcLine.setTo(rc.left + n, rc.top, 1, rc.height);
+                        pixels.fillRect(rcLine, Std.int(opacity * 0xFF) << 24 | c);
+                        n++;
+                    }
+                }
+            } else {
+                var color:FlxColor = Std.int(opacity * 0xFF) << 24 | style.backgroundColor;
+                pixels.fillRect(rc, color);
+            }
+        }
+        
+        if (style.backgroundImage != null) {
+            Toolkit.assets.getImage(style.backgroundImage, function(info:ImageInfo) {
+                if (info != null && info.data != null) {
+                    paintBackroundImage(sprite, info.data, style);
+                }
+            });
+        }
+    }
+    
+    private static function paintBackroundImage(sprite:FlxSprite, data:ImageData, style:Style) {
 		var bmd = data.parent.bitmap;
 		var rect = data.frame.copyToFlash();
 		
@@ -168,6 +192,8 @@ class FlxStyleHelper {
 			else {
 				sprite.pixels.draw(bmd, matrix, null, null, null);
 			}
+			
+			sprite.dirty = true;
 		}
 		
 		else {
